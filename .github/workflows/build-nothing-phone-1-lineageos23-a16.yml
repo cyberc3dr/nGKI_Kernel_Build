@@ -15,14 +15,17 @@ env:
   KERNEL_SOURCE : "https://github.com/LineageOS/android_kernel_nothing_sm7325.git"
   KERNEL_BRANCH : "lineage-23.0"
 
-  CLANG_SOURCE : "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/508ea7dd0d8f681904d0422e98af9613aaabf180/clang-r574158.tar.gz"
+  # CLANG 22.0.1 (r584948b) - Latest AOSP CLANG
+  CLANG_SOURCE : "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/8d870a6273b05545d5beb1318b473705dd3c3270/clang-r584948b.tar.gz"
   CLANG_BRANCH : ""
 
   GCC_GNU : false
-  GCC_64_SOURCE : "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9.git"
-  GCC_64_BRANCH : "android12L-release"
-  GCC_32_SOURCE : "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9.git"
-  GCC_32_BRANCH : "android12L-release"
+  # Eva GCC ARM64 - Latest release from mvaisakh/gcc-build
+  GCC_64_SOURCE : "https://github.com/mvaisakh/gcc-build/releases/download/11012026/eva-gcc-arm64-11012026.xz"
+  GCC_64_BRANCH : ""
+  # Eva GCC ARM32 - Latest release from mvaisakh/gcc-build
+  GCC_32_SOURCE : "https://github.com/mvaisakh/gcc-build/releases/download/11012026/eva-gcc-arm-11012026.xz"
+  GCC_32_BRANCH : ""
 
   DEFCONFIG_SOURCE: ""
   DEFCONFIG_NAME : "vendor/lahaina-qgki_defconfig"
@@ -38,12 +41,12 @@ env:
   SUSFS_ENABLE : true
   SUSFS_FIXED : false
 
-  AK3_SOURCE : "https://github.com/osm0sis/AnyKernel3.git"
-  AK3_BRANCH : "master"
+  AK3_SOURCE : "https://github.com/William24hmar/AnyKernel3.git"
+  AK3_BRANCH : "main"
 
   BOOT_SOURCE : ""
 
-  NEED_DTBO : false
+  NEED_DTBO : true
   NEED_SAFE_DTBO : false
 
   ROM_TEXT : "lineageos_23.0"
