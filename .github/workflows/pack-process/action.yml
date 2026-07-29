@@ -67,8 +67,13 @@ runs:
                 false
             fi
 
-            cat $IMAGE_DIR/$DTB_PATH/${{ env.GENERATE_CHIP }}/*.dtb > $IMAGE_DIR/dtb
-            cp -fp $IMAGE_DIR/dtb tmp
+            if [ "${{ env.CUSTOM_DTB }}" == "true" ]; then
+              cp -fp $IMAGE_DIR/$DTB_PATH/${{ env.GENERATE_CHIP }}/${{ env.DTB_NAME }}.dtb tmp/dtb
+            else
+              cat $IMAGE_DIR/$DTB_PATH/${{ env.GENERATE_CHIP }}/*.dtb > $IMAGE_DIR/DTB
+              cp -fp $IMAGE_DIR/DTB tmp/dtb
+            fi
+
             echo "Generated ${{ env.GENERATE_CHIP }} DTB."
           else
             echo "[-] Could not found dtb or dtb.img! Your device maybe needn't the file."
@@ -159,8 +164,13 @@ runs:
                 false
             fi
 
-            cat $IMAGE_DIR/$DTB_PATH/${{ env.GENERATE_CHIP }}/*.dtb > $IMAGE_DIR/dtb
-            cp -fp $IMAGE_DIR/dtb out/dtb
+            if [ "${{ env.CUSTOM_DTB }}" == "true" ]; then
+              cp -fp $IMAGE_DIR/$DTB_PATH/${{ env.GENERATE_CHIP }}/${{ env.DTB_NAME }}.dtb tmp/dtb
+            else
+              cat $IMAGE_DIR/$DTB_PATH/${{ env.GENERATE_CHIP }}/*.dtb > $IMAGE_DIR/DTB
+              cp -fp $IMAGE_DIR/DTB tmp/dtb
+            fi
+            
             echo "[+] Generated ${{ env.GENERATE_CHIP }} dtb."
 
           else
