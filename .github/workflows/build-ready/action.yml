@@ -312,6 +312,7 @@ runs:
             false
 
           elif [[ "${{ env.KPM_KPATCH_NEXT }}" == "true" ]]; then
+            ENABLE_KPM_CONFIGS
             GET_KPATCH_NEXT_TOOLS
 
           else
