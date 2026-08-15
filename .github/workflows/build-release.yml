@@ -47,6 +47,7 @@ jobs:
 
         | Device Name | Codename | Kernel | System | Android | Method | KernelSU | SuSFS | Re:Kernel | BBG | NoMount |
         |----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
+        | Xiaomi 12 Lite | taoyao | 5.4 | LineageOS 23 | 16 | Anykernel3 | ReSukiSU | ✅ | ❌ | ✅ | ❌ |
 
         - Specific device information: [Supported List](Supported_list.md).
         - The KernelSU version is for reference only. It is normal for the KernelSU version embedded in SUSFS to be lower.
