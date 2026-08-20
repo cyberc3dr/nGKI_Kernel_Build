@@ -44,3 +44,11 @@ jobs:
       fail-fast: true
     uses: ./.github/workflows/build-nothing-phone-1-nothingos32-a15.yml
     secrets: inherit
+
+  build-nothing-phone-1-pixelos-a16:
+    name: "Build Nothing Phone 1 (PixelOS A16)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-nothing-phone-1-pixelos-a16.yml
+    secrets: inherit
+
