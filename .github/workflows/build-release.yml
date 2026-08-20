@@ -48,6 +48,7 @@ jobs:
         | Device Name | Codename | Kernel | System | Android | Method | KernelSU | SuSFS | Re:Kernel | BBG | NoMount |
         |----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
         | Xiaomi 12 Lite | taoyao | 5.4 | LineageOS 23.2 | 16 | Anykernel3 | ReSukiSU | ✅ | ❌ | ✅ | ❌ |
+        | Poco X5 5G | moonstone | 5.4 | LineageOS 23.2 | 16 | Anykernel3 | ReSukiSU | ✅ | ❌ | ❌ | ❌ |
         | Nothing Phone (1) | spacewar | 5.4 | Evolution X 11.9 | 16 | Anykernel3 | ReSukiSU | ✅ | ❌ | ✅ | ❌ |
         | Nothing Phone (1) | spacewar | 5.4 | LineageOS 23.2 | 16 | Anykernel3 | ReSukiSU | ✅ | ❌ | ✅ | ❌ |
         | Nothing Phone (1) | spacewar | 5.4 | Nothing OS 3.2 | 15 | Anykernel3 | ReSukiSU | ✅ | ❌ | ✅ | ❌ |
