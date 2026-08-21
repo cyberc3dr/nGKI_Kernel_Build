@@ -12,7 +12,7 @@ env:
   CUSTOM_CMDS : "CROSS_COMPILE=aarch64-linux-gnu- CLANG_TRIPLE=aarch64-linux-gnu- TARGET_PRODUCT=taoyao"
   EXTRA_CMDS : "LLVM=1 LLVM_IAS=1"
 
-  KERNEL_SOURCE : "https://github.com/skglab-dev/kernel_xiaomi_taoyao.git"
+  KERNEL_SOURCE : "https://github.com/ximi-taoyao-test/kernel_xiaomi_taoyao.git"
   KERNEL_BRANCH : "lineage-23.2"
 
   CLANG_SOURCE : "https://github.com/bachnxuan/aosp_clang_mirror/releases/download/clang-r563880c-13989888/clang-r563880c.tar.gz"
