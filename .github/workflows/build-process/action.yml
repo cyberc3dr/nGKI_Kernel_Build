@@ -67,15 +67,26 @@ runs:
             # ancient GNU gold binary happens to be resolvable on PATH (from
             # a downloaded prebuilt GCC toolchain), that old gold does not
             # understand LLD-only flags such as --thinlto-cache-dir and the
-            # build fails with "unknown option". Since clang-custom/bin is
-            # first on PATH, shim "<prefix>ld.gold" here to point at the
-            # bundled ld.lld (which does understand those flags) so those
-            # hardcoded invocations transparently use a working linker.
+            # build fails with "unknown option".
+            #
+            # Modern LLVM ships "lld" as a universal driver that picks its
+            # flavor (ELF/Mach-O/COFF/Wasm) purely from the basename it was
+            # invoked as (ld.lld / ld64.lld / lld-link / wasm-ld). A plain
+            # symlink named "<prefix>ld.gold" -> ld.lld does NOT work: the
+            # process is still invoked with argv[0]="<prefix>ld.gold", which
+            # lld does not recognize, so it just prints a "generic driver"
+            # notice and refuses to link. Instead, shim "<prefix>ld.gold" as
+            # a tiny wrapper script that execs the real "ld.lld" by that
+            # exact name, so lld sees the name it expects.
             if [ -x "$GITHUB_WORKSPACE/clang-custom/bin/ld.lld" ]; then
               for prefix in aarch64-linux-android- aarch64-linux-gnu-; do
                 shim="$GITHUB_WORKSPACE/clang-custom/bin/${prefix}ld.gold"
                 if [ ! -e "$shim" ]; then
-                  ln -s "$GITHUB_WORKSPACE/clang-custom/bin/ld.lld" "$shim"
+                  printf '%s\n' \
+                    '#!/bin/sh' \
+                    'exec "'"$GITHUB_WORKSPACE"'/clang-custom/bin/ld.lld" "$@"' \
+                    > "$shim"
+                  chmod +x "$shim"
                 fi
               done
             fi
