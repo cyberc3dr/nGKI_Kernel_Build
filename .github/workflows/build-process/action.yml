@@ -35,6 +35,20 @@ runs:
         run: |
           cd $GITHUB_WORKSPACE/device_kernel/
 
+          # Ensure downloaded GCC toolchains (real binutils: as/ld/ld.gold/etc)
+          # are actually resolvable on PATH. Without this, CUSTOM_CMDS/EXTRA_CMDS
+          # overriding CROSS_COMPILE on the make command line (which always wins
+          # over env vars) causes the bare prefix to be looked up in PATH only,
+          # silently missing the real downloaded toolchain and falling back to
+          # /usr/bin/as (host x86 assembler) which cannot handle target flags
+          # like -EL, or spamming "<prefix>-ld.gold: not found".
+          if [ -d "$GITHUB_WORKSPACE/gcc-64/bin" ]; then
+            export PATH="$GITHUB_WORKSPACE/gcc-64/bin:$PATH"
+          fi
+          if [ -d "$GITHUB_WORKSPACE/gcc-32/bin" ]; then
+            export PATH="$GITHUB_WORKSPACE/gcc-32/bin:$PATH"
+          fi
+
           # Function
           BUILD_PROCESS(){
           if [ -n "$1" ]; then
