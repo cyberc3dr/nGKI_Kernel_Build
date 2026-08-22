@@ -60,6 +60,25 @@ runs:
 
           if [ -n "${{ env.CLANG_SOURCE }}" ]; then
             export PATH=$GITHUB_WORKSPACE/clang-custom/bin:$PATH
+
+            # Some old kernel Makefiles (e.g. arch/arm64/kernel/vdso/Makefile)
+            # hardcode "$(CROSS_COMPILE)ld.gold" as the linker for specific
+            # link steps instead of respecting LLVM=1 / $(LD). If a real,
+            # ancient GNU gold binary happens to be resolvable on PATH (from
+            # a downloaded prebuilt GCC toolchain), that old gold does not
+            # understand LLD-only flags such as --thinlto-cache-dir and the
+            # build fails with "unknown option". Since clang-custom/bin is
+            # first on PATH, shim "<prefix>ld.gold" here to point at the
+            # bundled ld.lld (which does understand those flags) so those
+            # hardcoded invocations transparently use a working linker.
+            if [ -x "$GITHUB_WORKSPACE/clang-custom/bin/ld.lld" ]; then
+              for prefix in aarch64-linux-android- aarch64-linux-gnu-; do
+                shim="$GITHUB_WORKSPACE/clang-custom/bin/${prefix}ld.gold"
+                if [ ! -e "$shim" ]; then
+                  ln -s "$GITHUB_WORKSPACE/clang-custom/bin/ld.lld" "$shim"
+                fi
+              done
+            fi
           fi
 
           if [[ "$BUILD_CLANG" == "true" ]]; then
