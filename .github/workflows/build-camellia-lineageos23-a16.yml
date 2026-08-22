@@ -10,7 +10,7 @@ env:
   DEVICE_CODENAME : "camellia"
 
   CUSTOM_CMDS : "CROSS_COMPILE=aarch64-linux-android- CLANG_TRIPLE=aarch64-linux-gnu-"
-  EXTRA_CMDS : "LLVM=1"
+  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1"
 
   KERNEL_SOURCE : "https://github.com/cristidclxvi/android_kernel_xiaomi_camellia.git"
   KERNEL_BRANCH : "lineage-23.2"
