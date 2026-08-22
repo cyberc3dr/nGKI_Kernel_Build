@@ -1,0 +1,155 @@
+name: Build Poco M3 Pro 5G / Redmi Note 10 5G (LineageOS 23.2 A16)
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  # Device env
+  DEVICE_NAME : "redmi_note10_5g"
+  DEVICE_CODENAME : "camellia"
+
+  CUSTOM_CMDS : "CROSS_COMPILE=aarch64-linux-gnu- CLANG_TRIPLE=aarch64-linux-gnu-"
+  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1"
+
+  KERNEL_SOURCE : "https://github.com/cristidclxvi/android_kernel_xiaomi_camellia.git"
+  KERNEL_BRANCH : "lineage-23.2"
+
+  CLANG_SOURCE : "https://github.com/bachnxuan/aosp_clang_mirror/releases/download/clang-r563880c-13989888/clang-r563880c.tar.gz"
+  CLANG_BRANCH : ""
+
+  GCC_GNU : false
+  GCC_64_SOURCE : "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9.git"
+  GCC_64_BRANCH : "android12L-release"
+  GCC_32_SOURCE : "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9.git"
+  GCC_32_BRANCH : "android12L-release"
+
+  DEFCONFIG_SOURCE: ""
+  DEFCONFIG_NAME : "camellian_gl_defconfig"
+  DEFCONFIG_ORIGIN_IMAGE: ""
+  DEFCONFIG_FROM_BOOT: false
+
+  KERNELSU_SOURCE : ""
+  KERNELSU_BRANCH : ""
+
+  KERNELSU_AUTO_GET : "true" # if u want easy setting kernelsu, u can true.
+  KERNELSU_AUTO_FORK : "resukisu" # xxksu, rsuntk, next, resukisu and sukisu
+
+  SUSFS_ENABLE : true
+  SUSFS_FIXED : false
+  # SUSFS_FIXED = false karena camellia belum ada di Supported_list.md, artinya
+  # belum ada repo "fix patch" khusus device ini. Patch SuSFS inti tetap jalan
+  # normal (diambil otomatis dari Patches/Patch/susfs_patch_to_4.14.patch di
+  # repo ini) karena kernel_version terdeteksi 4.14 dari Makefile kernel kamu.
+  # Kalau nanti kamu/orang lain bikin repo patch tambahan khusus camellia,
+  # aktifkan lagi SUSFS_FIXED: true dan isi 4 variabel di bawah (PATCHES_*).
+
+  AK3_SOURCE : "https://github.com/osm0sis/AnyKernel3.git"
+  AK3_BRANCH : "master"
+
+  BOOT_SOURCE : ""
+
+  NEED_DTBO : true
+  NEED_SAFE_DTBO : true
+  # Device SD480 5G umumnya pakai dtbo.img terpisah dari vendor_boot. Kalau
+  # boot ternyata gagal / dtbo tidak dipakai di ROM target kamu, ubah ke false.
+
+  ROM_TEXT : "lineageos_23.2"
+
+  # Other env
+  PYTHON_VERSION: "3" # Only 2(Ubuntu 22.04 and Ubuntu 20.04) or 3(Any OS Versions).
+
+  PACK_METHOD: "Anykernel3" # Anykernel3 need SOURCE and BRANCH, MKBOOTIMG needn't it.
+  PACK_KMODULES: "false" # if u want pack kernel modules (.ko) into Anykernel3.
+
+  KERNELSU_METHOD: "shell" # shell, manual and only.
+  KERNELSU_SUS_PATCH: "false" # if u need manual susfs patch to kernelsu.
+
+  PATCHES_SOURCE: "" # kosong dulu, lihat catatan SUSFS_FIXED di atas
+  PATCHES_BRANCH: "" # kosong dulu, lihat catatan SUSFS_FIXED di atas
+
+  SUSFS_FOLDER_FIXED: "" # kosong dulu, lihat catatan SUSFS_FIXED di atas
+  SUSFS_PATCH_FIXED: "" # kosong dulu, lihat catatan SUSFS_FIXED di atas
+
+  REKERNEL_ENABLE: "false" # if u need Re:Kernel.
+  DROIDSPACES_ENABLE: "false" # if u need Droidspaces or LXC/Docker.
+  NOMOUNT_ENABLE: "false" # if u need NoMount.
+
+  HOOK_METHOD: "syscall" # Manual hook method -> syscall.
+
+  KERNEL_PATCH: "false" # Cuma untuk kernel <= 4.9. Kernel kamu 4.14, jadi false.
+
+  KPM_ENABLE: "false" # Anyone devices.
+  KPM_INLINE: "false" # Only use it for SukiSU-Ultra.
+  KPM_KPATCH_NEXT: "false" # If u want hook KPatch-Next in build step.
+  KPM_PATCH_SOURCE: "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU_patch/refs/heads/main/kpm/patch_linux"
+
+  BASEBAND_GUARD_ENABLE: "false" # aktifkan kalau kamu sudah tahu node modem/partisi camellia yang perlu diproteksi.
+  BASEBAND_GUARD_BOOT: "false"
+
+  GENERATE_DTB: "false" # if u kernel need DTB , but cannot auto generate it. (Only Anykernel3).
+  GENERATE_CHIP: "qcom" # only supported for qcom and mediatek.
+  CUSTOM_DTB: "false" # if u want use custom dtb file, and need set DTB_NAME.
+  DTB_NAME: ""
+
+  BUILD_DEBUGGER: "false" # Output build errors.
+  SKIP_PATCH: "false" # Ignore errors found in Patch Debugger.
+
+  BUILD_OTHER_CONFIG: "false" # Merge config files.
+  MERGE_CONFIG_FILES: "vendor/debugfs.config"
+
+  FREE_MORE_SPACE: "false" # if u want get more space, enabled it.
+
+jobs:
+  build-kernel:
+    name: Poco M3 Pro 5G / Redmi Note 10 5G (camellia)
+    runs-on: ubuntu-latest
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+
+    steps:
+      - name: ⏰ Checkout repository
+        uses: actions/checkout@v6
+
+      - name: ⌛️ Compilation environment preparation
+        uses: ./.github/workflows/build-env
+
+      - name: ⚙️ Get neccssary tools
+        uses: ./.github/workflows/build-ready
+
+      - name: 🪝 Patch Kernel of SUSFS
+        uses: ./.github/workflows/patch-susfs
+
+      - name: 🔗 Patch for no-kprobe
+        uses: ./.github/workflows/patch-no-kprobe
+
+      - name: 🪛 Extra Kernel Options
+        run: |
+          # Only ${{ env.DEVICE_NAME }} use it.
+          cd $GITHUB_WORKSPACE/device_kernel
+
+          # Nothing
+
+      - name: 🧰 Patch Kernel of Re:Kernel
+        uses: ./.github/workflows/patch-rekernel
+
+      - name: 💿 Patch Kernel of Droidspaces
+        uses: ./.github/workflows/patch-droidspaces
+
+      - name: 🔒 Patch Kernel of Baseband Guard
+        uses: ./.github/workflows/patch-baseband-guard
+
+      - name: 🪝 Patch Kernel of NoMount
+        uses: ./.github/workflows/patch-nomount
+
+      - name: 🚀 Build Process
+        uses: ./.github/workflows/build-process
+
+      - name: 🔩 Pack Process
+        uses: ./.github/workflows/pack-process
+
+      - name: ✏️ Upload Artifacts
+        uses: ./.github/workflows/upload-files
+
