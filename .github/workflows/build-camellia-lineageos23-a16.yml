@@ -10,14 +10,21 @@ env:
   DEVICE_CODENAME : "camellia"
 
   CUSTOM_CMDS : "CROSS_COMPILE=aarch64-linux-android- CLANG_TRIPLE=aarch64-linux-gnu-"
-  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1 KCFLAGS=-Wa,-gdwarf-4"
-  # KCFLAGS=-Wa,-gdwarf-4 -> ini kernel 4.14 lama, GCC_64 yang didownload cuma
-  # 4.9 (binutils lama) dan Makefile-nya kemungkinan gak fully honor LLVM_IAS,
+  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1 KCFLAGS=-gdwarf-4"
+  # KCFLAGS=-gdwarf-4 -> ini kernel 4.14 lama, GCC_64 yang didownload cuma 4.9
+  # (binutils lama) dan Makefile-nya kemungkinan gak fully honor LLVM_IAS,
   # jadi beberapa file (mis. kernel/sys_ni.o) tetap dirakit pakai GNU `as` dari
   # toolchain GCC 4.9 itu. Clang modern (r563880c) default emit debug info
   # DWARF5 (".file 0 ..."), tapi `as` setua itu cuma ngerti DWARF <=4 dan
-  # gagal dengan "file number less than one". Maksa DWARF4 di level assembler
-  # ini fix paling aman tanpa harus patch Makefile kernel-nya.
+  # gagal dengan "file number less than one".
+  #
+  # NOTE: percobaan pertama pakai "KCFLAGS=-Wa,-gdwarf-4" TERNYATA GAK
+  # NGEFEK -- error identik persis (line 447/451 sama). Itu salah target:
+  # "-Wa,X" cuma nerusin opsi ke assembler eksternal, sedangkan directive
+  # ".file 0" itu sudah dibentuk oleh CLANG sendiri pas nge-generate file
+  # .s (tahap compile, sebelum assembler dipanggil). Yang benar buat
+  # ngontrol versi DWARF yang di-emit compiler adalah "-gdwarf-4" polos
+  # (tanpa "-Wa," prefix) -- itu diterapkan di sini.
 
   KERNEL_SOURCE : "https://github.com/cristidclxvi/android_kernel_xiaomi_camellia.git"
   KERNEL_BRANCH : "lineage-23.2"
