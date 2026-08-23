@@ -2,49 +2,42 @@ name: Build Poco M3 Pro 5G / Redmi Note 10 5G (LineageOS 23.2 A16)
 
 on:
   workflow_call:
+    inputs:
+      ksu_fork:
+        type: string
+        default: 'resukisu'
+      manifest_file:
+        type: string
+        default: ''
   workflow_dispatch:
+    inputs:
+      ksu_fork:
+        type: choice
+        description: 'KernelSU fork'
+        options:
+          - resukisu
+          - xxksu
+          - rsuntk
+          - sukisu
+          - next
+          - wildksu
+        default: 'resukisu'
+      manifest_file:
+        type: string
+        description: 'Override path manifest (kosongkan buat pakai manifest/camellia.env default)'
+        default: ''
 
 env:
   # Device env
   DEVICE_NAME : "redmi_note10_5g"
   DEVICE_CODENAME : "camellia"
 
-  CUSTOM_CMDS : "CROSS_COMPILE=aarch64-linux-android- CLANG_TRIPLE=aarch64-linux-gnu-"
-  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1 KCFLAGS=\"-gdwarf-4 -Wno-implicit-int -Wno-error=implicit-int\""
-  # -Wno-implicit-int -Wno-error=implicit-int -> kernel vendor Xiaomi ini
-  # (mt6833/camellia) masih banyak fungsi gaya K&R/C89 lama yang gak nulis
-  # return type eksplisit (mis. "static mi_ufshcd_set_err_state(...)" di
-  # drivers/scsi/ufs/ufshcd.c, harusnya "static void ..."). Dulu ini legal
-  # (implicit int) di GCC lama, tapi Clang modern nolak keras ini sebagai
-  # error. Karena ini pola berulang di banyak file vendor lawas (bukan cuma
-  # satu file), diturunin jadi warning-only lewat flag ini daripada di-fix
-  # satu-satu per file setiap ketemu lagi.
-  # KCFLAGS=-gdwarf-4 -> ini kernel 4.14 lama, GCC_64 yang didownload cuma 4.9
-  # (binutils lama) dan Makefile-nya kemungkinan gak fully honor LLVM_IAS,
-  # jadi beberapa file (mis. kernel/sys_ni.o) tetap dirakit pakai GNU `as` dari
-  # toolchain GCC 4.9 itu. Clang modern (r563880c) default emit debug info
-  # DWARF5 (".file 0 ..."), tapi `as` setua itu cuma ngerti DWARF <=4 dan
-  # gagal dengan "file number less than one".
-  #
-  # NOTE: percobaan pertama pakai "KCFLAGS=-Wa,-gdwarf-4" TERNYATA GAK
-  # NGEFEK -- error identik persis (line 447/451 sama). Itu salah target:
-  # "-Wa,X" cuma nerusin opsi ke assembler eksternal, sedangkan directive
-  # ".file 0" itu sudah dibentuk oleh CLANG sendiri pas nge-generate file
-  # .s (tahap compile, sebelum assembler dipanggil). Yang benar buat
-  # ngontrol versi DWARF yang di-emit compiler adalah "-gdwarf-4" polos
-  # (tanpa "-Wa," prefix) -- itu diterapkan di sini.
-
-  KERNEL_SOURCE : "https://github.com/cristidclxvi/android_kernel_xiaomi_camellia.git"
-  KERNEL_BRANCH : "lineage-23.2"
-
-  CLANG_SOURCE : "https://github.com/bachnxuan/aosp_clang_mirror/releases/download/clang-r563880c-13989888/clang-r563880c.tar.gz"
-  CLANG_BRANCH : ""
-
-  GCC_GNU : false
-  GCC_64_SOURCE : "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9.git"
-  GCC_64_BRANCH : "android12L-release"
-  GCC_32_SOURCE : "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9.git"
-  GCC_32_BRANCH : "android12L-release"
+  # Kernel source & toolchain (KERNEL_SOURCE/BRANCH, CLANG_*, GCC_*,
+  # CUSTOM_CMDS, EXTRA_CMDS) SEKARANG ADA DI manifest/camellia.env, di-load
+  # oleh step "Load Manifest" di bawah -- bukan lagi di sini. Mau ganti
+  # kernel source / toolchain / compiler flags? Edit file manifest itu, atau
+  # kasih path lain lewat input "manifest_file" pas workflow_dispatch.
+  MANIFEST_FILE: ${{ inputs.manifest_file }}
 
   DEFCONFIG_SOURCE: ""
   DEFCONFIG_NAME : "camellian_gl_defconfig"
@@ -55,7 +48,10 @@ env:
   KERNELSU_BRANCH : ""
 
   KERNELSU_AUTO_GET : "true" # if u want easy setting kernelsu, u can true.
-  KERNELSU_AUTO_FORK : "resukisu" # xxksu, rsuntk, next, resukisu and sukisu
+  KERNELSU_AUTO_FORK : ${{ inputs.ksu_fork }} # xxksu, rsuntk, next, resukisu, sukisu, wildksu
+  # Bisa dipilih langsung pas "Run workflow" (workflow_dispatch) lewat
+  # dropdown "KernelSU fork", atau di-pass sebagai input kalau workflow ini
+  # dipanggil via workflow_call dari workflow lain.
 
   SUSFS_ENABLE : true
   SUSFS_FIXED : false
@@ -115,14 +111,11 @@ env:
   DTB_NAME: ""
 
   BUILD_DEBUGGER: "true" # Output build errors.
-  # Sebelumnya false, jadi step "Patch .rej find" di patch-susfs/action.yml
-  # (yang seharusnya STOP build begitu ada hunk susfs yang gagal apply) ikut
-  # ke-skip total. Akibatnya task_mmu.c kepatch SEBAGIAN (3 dari 8 hunk
-  # FAILED), lolos ke tahap compile, baru meledak ~1 menit kemudian di
-  # smap_gather_stats dengan error yang jauh lebih membingungkan daripada
-  # error patch aslinya. Diaktifkan lagi supaya build gagal cepat & bersih
-  # persis di tahap patch, plus artifact "patch_rejected_files" (.rej +
-  # error.log) otomatis ke-upload buat didiagnosis.
+  # Kalau ini "false", step "Patch .rej find" di patch-susfs/action.yml (yang
+  # seharusnya STOP build begitu ada hunk susfs yang gagal apply) ikut
+  # ke-skip total. Akibatnya kernel bisa aja kepatch SEBAGIAN dan baru
+  # ketauan gagal jauh lebih lambat & lebih membingungkan di tahap compile.
+  # Sebaiknya biarin "true".
   SKIP_PATCH: "false" # Ignore errors found in Patch Debugger.
 
   BUILD_OTHER_CONFIG: "false" # Merge config files.
@@ -142,6 +135,9 @@ jobs:
     steps:
       - name: ⏰ Checkout repository
         uses: actions/checkout@v6
+
+      - name: 📜 Load Manifest (kernel source / toolchain)
+        uses: ./.github/workflows/load-manifest
 
       - name: ⌛️ Compilation environment preparation
         uses: ./.github/workflows/build-env
@@ -182,4 +178,3 @@ jobs:
 
       - name: ✏️ Upload Artifacts
         uses: ./.github/workflows/upload-files
-

@@ -175,6 +175,19 @@ runs:
                     KERNELSU_BRANCH="main"
                 fi
 
+            elif [[ "${{ env.KERNELSU_AUTO_FORK }}" == "wildksu" ]]; then
+                # NOTE: WildKernels/Wild_KSU repo di-archive (read-only) per
+                # 3 Mei 2026 -- masih bisa dipakai apa adanya, tapi gak akan
+                # ada update/fix lebih lanjut dari upstream-nya.
+                KERNELSU_AUTHOR="WildKernels"
+                KERNELSU_NAME="Wild_KSU"
+                KERNELSU_ORIGIN_BRANCH="wild"
+                if [[ "${{ env.SUSFS_ENABLE }}" == "true" ]]; then
+                    KERNELSU_BRANCH="wild"
+                else
+                    KERNELSU_BRANCH="wild"
+                fi
+
             else
                 echo "[-] Please input vaild fork name!"
                 false
@@ -183,6 +196,10 @@ runs:
 
             if [[ "${{ env.KERNELSU_AUTO_FORK }}" == "next" ]]; then
                 KERNELSU_FOLDER="KernelSU-Next"
+                echo "KERNELSU_NAME=$KERNELSU_FOLDER" >> $GITHUB_ENV
+
+            elif [[ "${{ env.KERNELSU_AUTO_FORK }}" == "wildksu" ]]; then
+                KERNELSU_FOLDER="Wild_KSU"
                 echo "KERNELSU_NAME=$KERNELSU_FOLDER" >> $GITHUB_ENV
 
             else
@@ -246,6 +263,136 @@ runs:
 
           fi
           echo "KERNELSU_METHOD=${{ env.KERNELSU_METHOD }}" >> $GITHUB_ENV
+
+      - name: ReSukiSU Upstream Compat Fixup
+        # Ditemukan lewat perbandingan sama CI lain (KonToLKzuu, branch
+        # v7-susfs220) yang sukses boot normal pakai ReSukiSU di kernel
+        # camellia yang sama, sedangkan kita kena kernel panic sedini
+        # sebelum bootanim. Bedanya BUKAN di hook method (kita berdua sama-
+        # sama pakai SuSFS Inline Hook), tapi: mereka nge-pin 1 commit
+        # ReSukiSU yang spesifik (bukan `main` branch mentah-mentah) DAN
+        # nambal beberapa identifier/declaration yang ternyata hilang di
+        # source ReSukiSU pada commit itu (extern ksu_cred, backup_policydb/
+        # backup_sidtab/ksu_late_loaded di selinux_hide.c, ksu_no_custom_rc
+        # di ksud_integration.c, SUSFS_MAGIC di supercall.c). Yang kayak
+        # gini biasanya gak bikin compile ERROR (implicit-declaration cuma
+        # warning), tapi bisa bikin runtime UB/crash -- persis gejala kamu.
+        # Diporting apa adanya dari setup-ksu/action.yml mereka.
+        if: env.KERNELSU_AUTO_FORK == 'resukisu' || contains(env.KERNELSU_SOURCE, 'ReSukiSU')
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel
+
+          # drivers/kernelsu itu symlink -> <repo ReSukiSU>/kernel. Cari akar
+          # repo-nya (yang punya folder .git) buat keperluan git pin commit.
+          KSU_LINK_TARGET="$(readlink -f drivers/kernelsu)"
+          KSU_REPO_DIR="$(dirname "$KSU_LINK_TARGET")"
+          if [ ! -d "$KSU_REPO_DIR/.git" ]; then
+            KSU_REPO_DIR="$(dirname "$KSU_REPO_DIR")"
+          fi
+
+          if [ ! -d "$KSU_REPO_DIR/.git" ]; then
+            echo "[-] [resukisu-fixup] Gak nemu root repo ReSukiSU (.git), dilewatin."
+
+          else
+            cd "$KSU_REPO_DIR"
+            echo "[+] [resukisu-fixup] Repo root: $KSU_REPO_DIR"
+
+            # --- Pin ke commit yang udah terbukti stabil di kernel ini ---
+            PINNED_COMMIT="cdce8bb8c8bf2167d21751e39ca6cdc4ad154678"
+            KSU_ABI_VERSION=35079
+            git fetch --unshallow origin main 2>/dev/null || git fetch origin main
+            git fetch origin "$PINNED_COMMIT"
+            git checkout --detach "$PINNED_COMMIT"
+            test "$(git rev-parse HEAD)" = "$PINNED_COMMIT" || {
+              echo "::error::ReSukiSU commit pin mismatch"; exit 1;
+            }
+            echo "[+] [resukisu-fixup] Pinned to $PINNED_COMMIT"
+
+            # --- Sinkronisasi folder UAPI ---
+            mkdir -p kernel/uapi kernel/policy/uapi include/uapi 2>/dev/null || true
+            cd "$GITHUB_WORKSPACE/device_kernel"
+            find "$KSU_REPO_DIR/" drivers/kernelsu/ -type d -name "uapi" 2>/dev/null | while read -r ufolder; do
+              cp -rf "$ufolder"/* drivers/kernelsu/uapi/ 2>/dev/null || true
+              cp -rf "$ufolder"/* drivers/kernelsu/policy/uapi/ 2>/dev/null || true
+              cp -rf "$ufolder"/* include/uapi/ 2>/dev/null || true
+            done
+
+            # --- Pasangkan ABI kernel-side sama build ReSukiSU 4.2 (35079) ---
+            if [ -f "drivers/kernelsu/Kbuild" ]; then
+              sed -i '/-DKERNEL_SU_VERSION=/d' drivers/kernelsu/Kbuild
+              sed -i "1iccflags-y += -I\$(srctree)/drivers/kernelsu -I\$(srctree)/drivers/kernelsu/include -DKERNEL_SU_VERSION=$KSU_ABI_VERSION" drivers/kernelsu/Kbuild
+              sed -i -E "s/^[[:space:]]*KSU_VERSION[[:space:]]*:=.*/KSU_VERSION := $KSU_ABI_VERSION/" drivers/kernelsu/Kbuild
+              printf '%s\n' "ccflags-y += -DKSU_VERSION=$KSU_ABI_VERSION -DKERNEL_SU_VERSION=$KSU_ABI_VERSION" >> drivers/kernelsu/Kbuild
+            fi
+            if [ -f "drivers/kernelsu/Makefile" ]; then
+              sed -i '/-DKERNEL_SU_VERSION=/d' drivers/kernelsu/Makefile
+              sed -i "1iccflags-y += -I\$(srctree)/drivers/kernelsu -I\$(srctree)/drivers/kernelsu/include -DKERNEL_SU_VERSION=$KSU_ABI_VERSION" drivers/kernelsu/Makefile
+              sed -i -E "s/^[[:space:]]*KSU_VERSION[[:space:]]*:=.*/KSU_VERSION := $KSU_ABI_VERSION/" drivers/kernelsu/Makefile
+            fi
+
+            # --- Embed marker ABI (dipakai buat cross-check versi runtime) ---
+            CORE_INIT="drivers/kernelsu/core/init.c"
+            if [ -f "$CORE_INIT" ] && ! grep -q "resukisu_kernel_abi_${KSU_ABI_VERSION}" "$CORE_INIT"; then
+              sed -i "1i__attribute__((used, section(\".rodata\"))) static const char resukisu_kernel_abi_${KSU_ABI_VERSION}[] = \"ReSukiSU-KERNEL-ABI-${KSU_ABI_VERSION}\";" "$CORE_INIT"
+            fi
+
+            # --- extern ksu_cred yang ilang di beberapa file .c ---
+            find drivers/kernelsu/ -type f -name "*.c" | while read -r file; do
+              if grep -q "ksu_cred" "$file" && ! grep -q "struct cred \*ksu_cred" "$file" && ! grep -q "extern.*ksu_cred" "$file"; then
+                echo "  -> [resukisu-fixup] Injecting extern ksu_cred into $file"
+                sed -i '1istruct cred;\nextern struct cred *ksu_cred;' "$file"
+              fi
+            done
+
+            # --- selinux_hide.c: identifier SELinux yang ilang ---
+            SELINUX_HIDE_FILE="drivers/kernelsu/feature/selinux_hide.c"
+            if [ -f "$SELINUX_HIDE_FILE" ]; then
+              sed -i '1i#include <linux/types.h>\nstruct policydb;\nstruct sidtab;\nextern struct policydb *backup_policydb;\nextern struct sidtab *backup_sidtab;\nextern bool ksu_late_loaded;' "$SELINUX_HIDE_FILE"
+
+              if ! grep -q "^struct policydb \*backup_policydb" "$SELINUX_HIDE_FILE" && ! grep -rq "struct policydb \*backup_policydb" drivers/kernelsu/selinux/ 2>/dev/null; then
+                echo "struct policydb *backup_policydb = NULL;" >> "$SELINUX_HIDE_FILE"
+                echo "struct sidtab *backup_sidtab = NULL;" >> "$SELINUX_HIDE_FILE"
+              fi
+
+              if ! grep -rq "ksu_late_loaded" drivers/kernelsu/core/ 2>/dev/null; then
+                echo "bool ksu_late_loaded = false;" >> "$SELINUX_HIDE_FILE"
+              fi
+              echo "[+] [resukisu-fixup] Patched selinux_hide.c missing identifiers."
+            fi
+
+            # --- ksud_integration.c: identifier runtime yang ilang + jadwalin ksud install ---
+            KSUD_FILE="drivers/kernelsu/runtime/ksud_integration.c"
+            if [ -f "$KSUD_FILE" ]; then
+              python3 "$GITHUB_WORKSPACE/.github/scripts/add_ksud_install_rc.py" "$KSUD_FILE" || true
+
+              sed -i '1i#include <linux/types.h>\nextern bool ksu_no_custom_rc;\nextern bool ksu_late_loaded;' "$KSUD_FILE"
+
+              if ! grep -rq "bool ksu_no_custom_rc" drivers/kernelsu/ 2>/dev/null; then
+                echo "bool ksu_no_custom_rc = false;" >> "$KSUD_FILE"
+              fi
+              if ! grep -rq "bool ksu_late_loaded" drivers/kernelsu/ 2>/dev/null; then
+                echo "bool ksu_late_loaded = false;" >> "$KSUD_FILE"
+              fi
+              echo "[+] [resukisu-fixup] Patched ksud_integration.c missing identifiers."
+            fi
+
+            # --- supercall.c: SUSFS_MAGIC yang ilang ---
+            SUPERCALL_FILE="drivers/kernelsu/supercall/supercall.c"
+            if [ -f "$SUPERCALL_FILE" ]; then
+              sed -i '1i#include <linux/types.h>\n#include <linux/susfs_def.h>\n#ifndef SUSFS_MAGIC\n#define SUSFS_MAGIC 0xA5A5A5A5\n#endif' "$SUPERCALL_FILE"
+              echo "[+] [resukisu-fixup] Patched supercall.c SUSFS_MAGIC."
+            fi
+
+            # --- dispatch.c: marker ABI + jangan dobel define command ABI SUSFS ---
+            DISPATCH_FILE="drivers/kernelsu/supercall/dispatch.c"
+            if [ -f "$DISPATCH_FILE" ]; then
+              sed -i "1i__attribute__((used, section(\".rodata\"))) static const unsigned int resukisu_kernel_abi_version = ${KSU_ABI_VERSION};\n#include <linux/types.h>\n#include <linux/susfs_def.h>\n#ifndef KERNEL_SU_VERSION\n#define KERNEL_SU_VERSION ${KSU_ABI_VERSION}\n#endif\nextern bool ksu_late_loaded;" "$DISPATCH_FILE"
+            fi
+            rm -f drivers/kernelsu/include/linux/susfs_def.h
+
+            echo "[+] [resukisu-fixup] Selesai."
+          fi
 
       - name: SukiSU-Ultra Fixed
         shell: bash

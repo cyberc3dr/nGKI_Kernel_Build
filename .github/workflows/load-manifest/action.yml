@@ -1,0 +1,41 @@
+name: 'Load device manifest (kernel source / toolchain) into env.'
+
+# Baca manifest/${{ env.DEVICE_CODENAME }}.env dan tuang isinya ke GITHUB_ENV,
+# supaya sumber kernel dan toolchain bisa diganti cukup dengan edit 1 file
+# kecil di folder manifest/, tanpa nyentuh logic workflow sama sekali.
+# Baris kosong dan yang diawali "#" diabaikan. Kalau ada MANIFEST_FILE yang
+# di-set manual (override), itu yang dipakai; kalau tidak, fallback ke
+# manifest/${{ env.DEVICE_CODENAME }}.env.
+
+runs:
+  using: 'composite'
+  steps:
+      - name: Load manifest
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE
+
+          if [ -n "${{ env.MANIFEST_FILE }}" ]; then
+            MANIFEST_PATH="${{ env.MANIFEST_FILE }}"
+          else
+            MANIFEST_PATH="manifest/${{ env.DEVICE_CODENAME }}.env"
+          fi
+
+          if [ ! -f "$MANIFEST_PATH" ]; then
+            echo "[-] Manifest file not found: $MANIFEST_PATH"
+            false
+          fi
+
+          echo "[+] Loading manifest: $MANIFEST_PATH"
+
+          while IFS= read -r LINE || [ -n "$LINE" ]; do
+            # Skip blank lines and comments
+            [[ -z "$LINE" ]] && continue
+            [[ "$LINE" =~ ^[[:space:]]*# ]] && continue
+
+            KEY="${LINE%%=*}"
+            echo "  -> $KEY"
+            echo "$LINE" >> $GITHUB_ENV
+          done < "$MANIFEST_PATH"
+
+          echo "[+] Manifest loaded."
