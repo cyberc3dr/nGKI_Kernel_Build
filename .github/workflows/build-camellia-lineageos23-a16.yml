@@ -10,7 +10,15 @@ env:
   DEVICE_CODENAME : "camellia"
 
   CUSTOM_CMDS : "CROSS_COMPILE=aarch64-linux-android- CLANG_TRIPLE=aarch64-linux-gnu-"
-  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1 KCFLAGS=-gdwarf-4"
+  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1 KCFLAGS=\"-gdwarf-4 -Wno-implicit-int -Wno-error=implicit-int\""
+  # -Wno-implicit-int -Wno-error=implicit-int -> kernel vendor Xiaomi ini
+  # (mt6833/camellia) masih banyak fungsi gaya K&R/C89 lama yang gak nulis
+  # return type eksplisit (mis. "static mi_ufshcd_set_err_state(...)" di
+  # drivers/scsi/ufs/ufshcd.c, harusnya "static void ..."). Dulu ini legal
+  # (implicit int) di GCC lama, tapi Clang modern nolak keras ini sebagai
+  # error. Karena ini pola berulang di banyak file vendor lawas (bukan cuma
+  # satu file), diturunin jadi warning-only lewat flag ini daripada di-fix
+  # satu-satu per file setiap ketemu lagi.
   # KCFLAGS=-gdwarf-4 -> ini kernel 4.14 lama, GCC_64 yang didownload cuma 4.9
   # (binutils lama) dan Makefile-nya kemungkinan gak fully honor LLVM_IAS,
   # jadi beberapa file (mis. kernel/sys_ni.o) tetap dirakit pakai GNU `as` dari
