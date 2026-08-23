@@ -82,6 +82,40 @@ runs:
 
           fi
 
+          # --- Camellia (redmi_note10_5g) fork compat fixup ---
+          # fs/proc/task_mmu.c di cristidclxvi/android_kernel_xiaomi_camellia
+          # sudah cukup direstruktur (offset hunk s.d. -53/+36 baris) sampai
+          # susfs_patch_to_4.14.patch gak nempel bersih. Efeknya, sesuai .rej
+          # yang ketangkep run sebelumnya:
+          #  1) Hunk #1 (include <linux/susfs_def.h> terguard) GAGAL apply --
+          #     dibutuhin karena dipakai hunk lain, jadi di-insert ulang di
+          #     sini secara manual, ditaruh sebelum "#include <asm/elf.h>"
+          #     (baris yang hampir pasti selalu ada apa adanya).
+          #  2) Hunk #5 & #6 GAGAL apply, tapi isinya cuma kosmetik (hapus/
+          #     tambah baris kosong) -- aman diabaikan, gak pengaruh compile.
+          #  3) Hunk #4 (nambah cek SUSFS_IS_INODE_SUS_MAP + "return 0;")
+          #     dilaporin SUKSES, tapi context-match-nya kelewat longgar
+          #     (fuzz 2, offset -53) jadi nyasar ke-insert ke dalam
+          #     smap_gather_stats() yang return-type-nya void, bukan ke
+          #     show_smap() (int) kayak yang dimaksud upstream. Ini penyebab
+          #     asli error compile "void function 'smap_gather_stats' should
+          #     not return a value" -- dan gak kelihatan di .rej karena
+          #     hunk-nya dianggap "sukses", cuma salah tempat.
+          if [[ "${{ env.DEVICE_CODENAME }}" == "camellia" ]] && [ -f "fs/proc/task_mmu.c" ]; then
+            if ! grep -q "linux/susfs_def.h" fs/proc/task_mmu.c && grep -q "#include <asm/elf.h>" fs/proc/task_mmu.c; then
+              perl -0777 -pi -e 's/(#include <asm\/elf\.h>)/#if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)\n#include <linux\/susfs_def.h>\n#endif\n\n$1/' fs/proc/task_mmu.c
+              echo "[+] [camellia-fixup] Re-inserted missing susfs_def.h include."
+            fi
+
+            if grep -Pzoq "if \(vma->vm_file && SUSFS_IS_INODE_SUS_MAP\(file_inode\(vma->vm_file\)\)\)\n\t\treturn 0;" fs/proc/task_mmu.c; then
+              perl -0777 -pi -e 's/(if \(vma->vm_file && SUSFS_IS_INODE_SUS_MAP\(file_inode\(vma->vm_file\)\)\)\n\t\t)return 0;/${1}return;/' fs/proc/task_mmu.c
+              echo "[+] [camellia-fixup] Fixed stray 'return 0;' inside void smap_gather_stats()."
+            fi
+
+            rm -f fs/proc/task_mmu.c.rej
+            echo "[+] [camellia-fixup] task_mmu.c.rej cleared (hunks #1/#5/#6 already handled or cosmetic)."
+          fi
+
           # Patch .rej find
           if [[ "${{ env.BUILD_DEBUGGER }}" == "true" ]]; then
             echo "[+] Checking SuSFS v${SUSFS_VERSION} rej files..."
