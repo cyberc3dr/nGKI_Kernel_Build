@@ -133,12 +133,22 @@ runs:
 
             fi
 
-            if [[ "${{ env.SKIP_PATCH }}" == "true" ]] || [ -n "${{ env.SUSFS_PATCH_FIXED }}" ]; then
+            # Bug asli: cabang di bawah ini gak pernah ngecek jumlah
+            # REJ_FILES, cuma ngecek SKIP_PATCH/SUSFS_PATCH_FIXED -- jadi
+            # build tetap di-stop ("Found .rej files, Stopped!") walaupun
+            # REJ_FILES kosong. Sekarang digembok dengan syarat REJ_FILES
+            # beneran ada isinya dulu.
+            if [ ${#REJ_FILES[@]} -eq 0 ]; then
+                echo "[+] SuSFS Patch Version: v${SUSFS_VERSION}. "
+                echo "[+] No rej files found, continuing build normally."
+                PACK_FILES
+
+            elif [[ "${{ env.SKIP_PATCH }}" == "true" ]] || [ -n "${{ env.SUSFS_PATCH_FIXED }}" ]; then
                 echo "[+] SuSFS Patch Version: v${SUSFS_VERSION}. "
                 echo "[+] SKIP_PATCH enabled or found SuSFS v2.2.00 Fixed Patch, skipping."
                 PACK_FILES
 
-            elif [[ "${{ env.SKIP_PATCH }}" != "true" ]] || [ -z "${{ env.SUSFS_PATCH_FIXED }}" ]; then
+            else
                 echo "[+] SuSFS Patch Version: v${SUSFS_VERSION}. "
                 echo "[-] Found .rej files, Stopped! "
                 PACK_FILES
