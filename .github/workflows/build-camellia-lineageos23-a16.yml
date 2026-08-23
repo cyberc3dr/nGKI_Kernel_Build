@@ -10,7 +10,14 @@ env:
   DEVICE_CODENAME : "camellia"
 
   CUSTOM_CMDS : "CROSS_COMPILE=aarch64-linux-android- CLANG_TRIPLE=aarch64-linux-gnu-"
-  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1"
+  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1 KCFLAGS=-Wa,-gdwarf-4"
+  # KCFLAGS=-Wa,-gdwarf-4 -> ini kernel 4.14 lama, GCC_64 yang didownload cuma
+  # 4.9 (binutils lama) dan Makefile-nya kemungkinan gak fully honor LLVM_IAS,
+  # jadi beberapa file (mis. kernel/sys_ni.o) tetap dirakit pakai GNU `as` dari
+  # toolchain GCC 4.9 itu. Clang modern (r563880c) default emit debug info
+  # DWARF5 (".file 0 ..."), tapi `as` setua itu cuma ngerti DWARF <=4 dan
+  # gagal dengan "file number less than one". Maksa DWARF4 di level assembler
+  # ini fix paling aman tanpa harus patch Makefile kernel-nya.
 
   KERNEL_SOURCE : "https://github.com/cristidclxvi/android_kernel_xiaomi_camellia.git"
   KERNEL_BRANCH : "lineage-23.2"
@@ -92,7 +99,15 @@ env:
   CUSTOM_DTB: "false" # if u want use custom dtb file, and need set DTB_NAME.
   DTB_NAME: ""
 
-  BUILD_DEBUGGER: "false" # Output build errors.
+  BUILD_DEBUGGER: "true" # Output build errors.
+  # Sebelumnya false, jadi step "Patch .rej find" di patch-susfs/action.yml
+  # (yang seharusnya STOP build begitu ada hunk susfs yang gagal apply) ikut
+  # ke-skip total. Akibatnya task_mmu.c kepatch SEBAGIAN (3 dari 8 hunk
+  # FAILED), lolos ke tahap compile, baru meledak ~1 menit kemudian di
+  # smap_gather_stats dengan error yang jauh lebih membingungkan daripada
+  # error patch aslinya. Diaktifkan lagi supaya build gagal cepat & bersih
+  # persis di tahap patch, plus artifact "patch_rejected_files" (.rej +
+  # error.log) otomatis ke-upload buat didiagnosis.
   SKIP_PATCH: "false" # Ignore errors found in Patch Debugger.
 
   BUILD_OTHER_CONFIG: "false" # Merge config files.
