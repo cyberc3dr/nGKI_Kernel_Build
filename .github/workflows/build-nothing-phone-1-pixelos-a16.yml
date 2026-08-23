@@ -37,6 +37,7 @@ env:
 
   SUSFS_ENABLE : true
   SUSFS_FIXED : true
+  SUSFS_TRY_UMOUNT : false
 
   AK3_SOURCE : "https://github.com/osm0sis/AnyKernel3.git"
   AK3_BRANCH : "master"
