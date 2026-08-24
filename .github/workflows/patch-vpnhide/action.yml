@@ -1,0 +1,41 @@
+name: 'Patch VPNHide for Kernel.'
+
+runs:
+  using: 'composite'
+  steps:
+      - name: Patch VPNHide
+        if: env.VPNHIDE_ENABLE == 'true'
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel/
+          git clone https://github.com/soranerai/vpnhide_next_backend /tmp/vpnhide
+
+          if [[ "${{ env.KERNEL_VERSION }}" == "5.4" ]]; then
+            echo "[+] Detected kernel 5.4"
+
+            cp /tmp/vpnhide/kpatch/versions/android12-5.4/legacy.patch ./
+            patch -p1 < legacy.patch || true
+
+            cp /tmp/vpnhide/kpatch/include/linux/* ./include/linux/
+            mkdir -p ./security/vpnhide
+            cp /tmp/vpnhide/kpatch/security/vpnhide/* ./security/vpnhide
+
+            echo "CONFIG_VPNHIDE=y" >> ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+
+            echo "[+] Patched VPNHide for your kernel 5.4 successfully."
+          elif [[ "${{ env.KERNEL_VERSION }}" == "4.19" ]]; then
+            echo "[+] Detected kernel 4.19"
+
+            cp /tmp/vpnhide/kpatch/versions/upstream-4.19/legacy.patch ./
+            patch -p1 < legacy.patch || true
+
+            cp /tmp/vpnhide/kpatch/include/linux/* ./include/linux/
+            mkdir -p ./security/vpnhide
+            cp /tmp/vpnhide/kpatch/security/vpnhide/* ./security/vpnhide
+
+            echo "CONFIG_VPNHIDE=y" >> ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+
+            echo "[+] Patched VPNHide for your kernel 4.19 successfully."
+          else
+            echo "[-] Your kernel doesn't support this feature"
+          fi
