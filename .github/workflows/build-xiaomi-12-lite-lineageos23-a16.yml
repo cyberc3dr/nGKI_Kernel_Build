@@ -133,14 +133,14 @@ jobs:
       - name: 💿 Patch Kernel of Droidspaces
         uses: ./.github/workflows/patch-droidspaces
 
+      - name: 🛡 Patch Kernel of VPNHide
+        uses: ./.github/workflows/patch-vpnhide
+
       - name: 🔒 Patch Kernel of Baseband Guard
         uses: ./.github/workflows/patch-baseband-guard
 
       - name: 🪝 Patch Kernel of NoMount
         uses: ./.github/workflows/patch-nomount
-
-      - name: 🛡 Patch Kernel of VPNHide
-        uses: ./.github/workflows/patch-vpnhide
 
       - name: 🚀 Build Process
         uses: ./.github/workflows/build-process
