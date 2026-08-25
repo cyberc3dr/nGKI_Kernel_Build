@@ -94,7 +94,7 @@ jobs:
           # Get KernelSU version
           git clone -b master https://github.com/backslashxx/KernelSU.git KernelSU-xxksu
           KSU_XXKSU_VERSION=$(cd KernelSU-xxksu && expr $(/usr/bin/git rev-list --count HEAD) + 30000 - 96)
-          git clone -b main https://github.com/ReSukiSU/ReSukiSU.git KernelSU-KowSU
+          git clone -b main https://github.com/KOWX712/KernelSU.git KernelSU-KowSU
           KSU_KOWSU_VERSION=$(cd KernelSU-KowSU && expr $(/usr/bin/git rev-list --count HEAD) + 30000)
           git clone -b main https://github.com/ReSukiSU/ReSukiSU.git KernelSU-ReSukiSU
           KSU_RESUKISU_VERSION=$(cd KernelSU-ReSukiSU && expr $(/usr/bin/git rev-list --count HEAD) + 30700)
