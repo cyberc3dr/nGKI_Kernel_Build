@@ -92,13 +92,19 @@ jobs:
           git push --tags
 
           # Get KernelSU version
+          git clone -b master https://github.com/backslashxx/KernelSU.git KernelSU-xxksu
+          KSU_XXKSU_VERSION=$(cd KernelSU-xxksu && expr $(/usr/bin/git rev-list --count HEAD) + 30000 - 96)
+          git clone -b main https://github.com/ReSukiSU/ReSukiSU.git KernelSU-KowSU
+          KSU_KOWSU_VERSION=$(cd KernelSU-KowSU && expr $(/usr/bin/git rev-list --count HEAD) + 30000)
           git clone -b main https://github.com/ReSukiSU/ReSukiSU.git KernelSU-ReSukiSU
           KSU_RESUKISU_VERSION=$(cd KernelSU-ReSukiSU && expr $(/usr/bin/git rev-list --count HEAD) + 30700)
 
           # Input release note
           echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
           echo "$RELEASE_NOTES" >> $GITHUB_ENV
-          echo "[KernelSU-ReSukiSU](https://github.com/ReSukiSU/ReSukiSU) Version: $KSU_RESUKISU_VERSION  " >> $GITHUB_ENV
+          echo "[KernelSU-KowSU](https://t.me/kowsu_build) Version: $KSU_KOWSU_VERSION  " >> $GITHUB_ENV
+          echo "[KernelSU-xxksu](https://github.com/backslashxx/KernelSU/releases) Version: $KSU_XXKSU_VERSION  " >> $GITHUB_ENV
+          echo "[KernelSU-ReSukiSU](https://github.com/cctv18/ReSukiSU_CI) Version: $KSU_RESUKISU_VERSION  " >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       # Create GitHub Release and upload files if make_release is true
