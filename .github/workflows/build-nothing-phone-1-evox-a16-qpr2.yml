@@ -33,7 +33,7 @@ env:
   KERNELSU_BRANCH : ""
 
   KERNELSU_AUTO_GET : "true"
-  KERNELSU_AUTO_FORK : "resukisu" # xxksu, rsuntk , next, resukisu and sukisu
+  KERNELSU_AUTO_FORK : "xxksu" # xxksu, rsuntk , next, resukisu and sukisu
 
   SUSFS_ENABLE : true
   SUSFS_FIXED : true
@@ -68,7 +68,7 @@ env:
   NOMOUNT_ENABLE: "false" # if u need NoMount.
   VPNHIDE_ENABLE: "false"
 
-  HOOK_METHOD: "syscall" # Manual hook method ->  syscall.
+  HOOK_METHOD: "branchlink" # Manual hook method ->  syscall.
 
   KERNEL_PATCH: "false" # If your kernel version is <= 4.9, you have the option of enabling the patch to patch the kernel_write and kernel_read functions.
 
