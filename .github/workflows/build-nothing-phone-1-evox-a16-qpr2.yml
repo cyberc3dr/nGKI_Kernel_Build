@@ -122,7 +122,10 @@ jobs:
       - name: 🪛 Extra Kernel Options
         run: |
           # Only ${{ env.DEVICE_NAME }} use it.
-          cd $GITHUB_WORKSPACE/device_kernel
+          cd $GITHUB_WORKSPACE/device_kernel/KernelSU
+
+          cp /tmp/Patches/Patch/xxksu_fix_compat.patch ./
+          patch -p1 < xxksu_fix_compat.patch || true
 
           # Nothing
 
