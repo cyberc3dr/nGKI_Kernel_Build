@@ -15,3 +15,32 @@ jobs:
       fail-fast: true
     uses: ./.github/workflows/build-xiaomi-12-lite-lineageos23-a16.yml
     secrets: inherit
+
+  # Nothing
+  build-nothing-phone-1-evox-a16-qpr2:
+    name: "Build Nothing Phone 1 (EvolutionX 11.9 A16)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-nothing-phone-1-evox-a16-qpr2.yml
+    secrets: inherit
+
+  build-nothing-phone-1-lineageos23-a16:
+    name: "Build Nothing Phone 1 (LineageOS 23.2 A16)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-nothing-phone-1-lineageos23-a16.yml
+    secrets: inherit
+
+  build-nothing-phone-1-nothingos32-a15:
+    name: "Build Nothing Phone 1 (Nothing OS 3.2 A15)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-nothing-phone-1-nothingos32-a15.yml
+    secrets: inherit
+
+  build-nothing-phone-1-pixelos-a16:
+    name: "Build Nothing Phone 1 (PixelOS A16)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-nothing-phone-1-pixelos-a16.yml
+    secrets: inherit
