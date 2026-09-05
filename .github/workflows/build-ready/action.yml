@@ -128,8 +128,7 @@ runs:
                 KERNELSU_NAME="KernelSU"
                 KERNELSU_ORIGIN_BRANCH="master"
                 if [[ "${{ env.SUSFS_ENABLE }}" == "true" ]]; then
-                    echo "[-] ${{ env.KERNELSU_AUTO_FORK }} doesn't support SUSFS! "
-                    false
+                    KERNELSU_BRANCH="master"
                 else
                     KERNELSU_BRANCH="master"
                 fi
@@ -247,6 +246,23 @@ runs:
 
           fi
           echo "KERNELSU_METHOD=${{ env.KERNELSU_METHOD }}" >> $GITHUB_ENV
+
+      - name: xxKSU add SUSFS
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel/KernelSU
+
+          if [[ "${{ env.KERNELSU_SOURCE }}" == *backslashxx* ]] || [[ "${{ env.KERNELSU_AUTO_FORK }}" == "xxksu" ]]; then
+            if [[ "${{ env.SUSFS_ENABLE }}" == "true" ]]; then
+              patch -p1 < <(curl -sL "https://github.com/midori01/KernelSU/commit/xx.patch") || true
+
+              echo "[+] xxKSU SUSFS applied."
+            fi
+            
+          else
+            echo "[-] Your KernelSU Fork needn't it, Skipped."
+
+          fi
 
       - name: KPM Function Support
         if: env.KPM_ENABLE == 'true'
