@@ -1,2 +1,3 @@
 | Device | Location | Codename | Kernel/Author/Name | OS | Android | Pack Method | KernelSU | SuSFS | Hook | KPM | Re:Kernel | BBG | NoMount | VPNHide | Status |  
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|  
+| Xiaomi 12 Lite | All | taoyao | [5.4/ximi-taoyao-test/sm7325](https://github.com/ximi-taoyao-test/kernel_xiaomi_taoyao) | Lineage OS 23.2 | 16 | AnyKernel3 | xxKSU | ✅ | Branch link | ❌ | ❌ | ✅ | ❌ | ✅ | Stable |  
