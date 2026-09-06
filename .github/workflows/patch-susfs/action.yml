@@ -73,7 +73,6 @@ runs:
               chmod +x susfs_deinlined.sh
               ./susfs_deinlined.sh susfs_patch_to_${{ env.KERNEL_VERSION }}.patch deinlined.patch
               patch -p1 < deinlined.patch || true
-              patch -p1 < <(curl -sL "https://raw.githubusercontent.com/midori01/gki_ksu_workflow/refs/heads/main/.github/patches/55_try_umount_for_susfs.patch") || true
             else
               patch -p1 < susfs_patch_to_${{ env.KERNEL_VERSION }}.patch || true
             fi
