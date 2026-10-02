@@ -136,5 +136,7 @@ jobs:
 
   build-motorola-one-5g-ace:
     name: "Motorola One 5G Ace (LineageOS 23.2 A16)"
+    strategy:
+      fail-fast: true
     uses: ./.github/workflows/build-motorola-one-5g-ace-lineageos23-a16.yml
     secrets: inherit
