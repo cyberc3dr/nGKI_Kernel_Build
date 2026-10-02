@@ -1,4 +1,4 @@
-name: Build Kernel
+vname Build Kernel
 
 permissions:
   contents: write
@@ -132,4 +132,9 @@ jobs:
     strategy:
       fail-fast: true
     uses: ./.github/workflows/build-redmi-note11pro-5g-aosp-a16.yml
+    secrets: inherit
+
+  build-motorola-one-5g-ace:
+    name: "Motorola One 5G Ace (LineageOS 23.2 A16)"
+    uses: ./.github/workflows/build-motorola-one-5g-ace-lineageos23-a16.yml
     secrets: inherit
