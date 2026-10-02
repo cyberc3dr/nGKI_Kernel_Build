@@ -1,135 +1,54 @@
 name: Build Kernel
 
-permissions:
-  contents: write
-  actions: write
-
 on:
-  workflow_call:
+  workflow_dispatch:
 
 jobs:
+  build-motorola-one-5g-ace:
+    name: "Motorola One 5G Ace (LineageOS 23.2 A16)"
+    uses: ./.github/workflows/build-motorola-one-5g-ace-lineageos23-a16.yml
+    secrets: inherit
+    
+  # Xiaomi
+  build-xiaomi-12-lite-lineageos23-a16:
+    name: "Build Xiaomi 12 Lite (LineageOS 23 A16)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-xiaomi-12-lite-lineageos23-a16.yml
+    secrets: inherit
+
+  build-poco-x5-5g-lineageos23-a16:
+    name: "Build POCO X5 5G (LineageOS 23.2 A16)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-poco-x5-5g-lineageos23-a16.yml
+    secrets: inherit
+
   # Nothing
+  build-nothing-phone-1-evox-a16-qpr2:
+    name: "Build Nothing Phone 1 (EvolutionX 11.9 A16)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-nothing-phone-1-evox-a16-qpr2.yml
+    secrets: inherit
+
   build-nothing-phone-1-lineageos23-a16:
-    name: "Nothing Phone (1) (LineageOS 23.2 A16)"
+    name: "Build Nothing Phone 1 (LineageOS 23.2 A16)"
     strategy:
       fail-fast: true
     uses: ./.github/workflows/build-nothing-phone-1-lineageos23-a16.yml
     secrets: inherit
 
-  # OnePlus
-  build-oneplus-8-series-oos13-a13-xtd:
-    name: "OnePlus 8 Series (ColorOS 13 A13 XTD)"
+  build-nothing-phone-1-nothingos32-a15:
+    name: "Build Nothing Phone 1 (Nothing OS 3.2 A15)"
     strategy:
       fail-fast: true
-    uses: ./.github/workflows/build-oneplus-8-series-oos13-a13-xtd.yml
+    uses: ./.github/workflows/build-nothing-phone-1-nothingos32-a15.yml
     secrets: inherit
 
-  build-oneplus-8-series-cos15-a15:
-    name: "OnePlus 8 Series (ColorOS 15 A15)"
+  build-nothing-phone-1-pixelos-a16:
+    name: "Build Nothing Phone 1 (PixelOS A16)"
     strategy:
       fail-fast: true
-    uses: ./.github/workflows/build-oneplus-8-series-cos15-a15.yml
-    secrets: inherit
-
-  # Samsung
-  build-samsung-a71-aosp-oneui-a16:
-    name: "Samsung Galaxy A71 (AOSP Based & OneUI A16)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-samsung-a71-aosp-oneui-a16.yml
-    secrets: inherit
-
-  build-samsung-note10-oneui-a15:
-    name: "Samsung Galaxy Note10 (OneUI A15)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-samsung-note10-oneui-a15.yml
-    secrets: inherit
-
-  build-samsung-note10plus-oneui-a15:
-    name: "Samsung Galaxy Note10+ (OneUI A15)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-samsung-note10plus-oneui-a15.yml
-    secrets: inherit
-
-  # Smartisan
-  build-smartisan-r1-smartisanos-a8:
-    name: "Smartisan R1 (Smartisan OS A8.1)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-smartisan-r1-smartisanos-a8.yml
-    secrets: inherit
-
-  build-smartisan-u3pro-lineageos18-a11:
-    name: "Smartisan U3 Pro (LineageOS 18 A11)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-smartisan-u3pro-lineageos18-a11.yml
-    secrets: inherit
-
-  # Xiaomi
-  ## Mi
-  build-xiaomi-11-evox-a16:
-    name: "Xiaomi Mi 11 (Evolution X 11 A16)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-xiaomi-11-evox-a16.yml
-    secrets: inherit
-
-  build-xiaomi-mix2s-evox10-a15:
-    name: "Xiaomi Mi MIX 2S (Evolution X 10 A15)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-xiaomi-mix2s-evox10-a15.yml
-    secrets: inherit
-
-  build-xiaomi-mix2s-aosp-a16-419:
-    name: "Xiaomi Mi MIX 2S (AOSP Based A16) (Kernel 4.19)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-xiaomi-mix2s-aosp-a16-419.yml
-    secrets: inherit
-
-  build-xiaomi-mipad4-lineageos22-a15:
-    name: "Xiaomi Mi Pad 4 (LineageOS 22 A15)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-xiaomi-mipad4-lineageos22-a15.yml
-    secrets: inherit
-
-  ## Redmi
-  build-redmi-8-aosp-a15-419:
-    name: "Xiaomi Redmi 8 (AOSP Based A15) (Kernel 4.19)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-redmi-8-aosp-a15-419.yml
-    secrets: inherit
-
-  build-redmi-k20pro-aosp-a15-sovietstaross:
-    name: "Xiaomi Redmi K20 Pro (Soviet-Star-OSS) (AOSP Based A15)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-redmi-k20pro-aosp-a15-sovietstaross.yml
-    secrets: inherit
-
-  build-redmi-k30ultra-aosp-a14:
-    name: "Xiaomi Redmi K30 Ultra (AOSP Based A14)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-redmi-k30ultra-aosp-a14.yml
-    secrets: inherit
-
-  build-redmi-note7-aosp-a15:
-    name: "Xiaomi Redmi Note 7 (AOSP Based A15)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-redmi-note7-aosp-a15.yml
-    secrets: inherit
-
-  build-redmi-note11pro-5g-aosp-a16:
-    name: "Xiaomi Redmi Note 11 Pro 5G (AOSP Based A16)"
-    strategy:
-      fail-fast: true
-    uses: ./.github/workflows/build-redmi-note11pro-5g-aosp-a16.yml
+    uses: ./.github/workflows/build-nothing-phone-1-pixelos-a16.yml
     secrets: inherit
