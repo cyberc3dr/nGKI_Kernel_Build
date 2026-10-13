@@ -65,7 +65,7 @@ env:
 
   REKERNEL_ENABLE: "false" # if u need Re:Kernel.
   DROIDSPACES_ENABLE: "false" # if u need Droidspaces or LXC/Docker.
-  NOMOUNT_ENABLE: "true" # if u need NoMount.
+  NOMOUNT_ENABLE: "false" # if u need NoMount.
   VPNHIDE_ENABLE: "true"
 
   HOOK_METHOD: "branchlink" # Manual hook method ->  syscall.
