@@ -65,7 +65,7 @@ env:
 
   REKERNEL_ENABLE: "false" # if u need Re:Kernel.
   DROIDSPACES_ENABLE: "false" # if u need Droidspaces or LXC/Docker.
-  NOMOUNT_ENABLE: "true" # if u need NoMount.
+  NOMOUNT_ENABLE: "false" # if u need NoMount.
   FGETPRIORITY_ENABLE: "true" #if u need hide getpriority.
   VPNHIDE_ENABLE: "true" #if u need hide vpn status.
 
