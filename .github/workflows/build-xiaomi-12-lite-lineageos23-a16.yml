@@ -38,7 +38,7 @@ env:
   SUSFS_ENABLE : true
   SUSFS_FIXED : true
 
-  AK3_SOURCE : "https://github.com/skglab-dev/AnyKernel3.git"
+  AK3_SOURCE : "https://github.com/cyberc3dr/AnyKernel3.git"
   AK3_BRANCH : "taoyao"
 
   BOOT_SOURCE : ""
