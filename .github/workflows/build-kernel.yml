@@ -8,4 +8,10 @@ on:
   workflow_call:
 
 jobs:
-  # Add your devices here
+  # Xiaomi
+  build-xiaomi-12-lite-lineageos23-a16:
+    name: "Build Xiaomi 12 Lite (LineageOS 23 A16)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-xiaomi-12-lite-lineageos23-a16.yml
+    secrets: inherit
