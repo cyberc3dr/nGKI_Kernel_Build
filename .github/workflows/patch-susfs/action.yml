@@ -69,10 +69,19 @@ runs:
             cp /tmp/Patches/Patch/susfs_patch_to_${{ env.KERNEL_VERSION }}.patch ./
 
             if [[ "${{ env.KERNELSU_SOURCE }}" == *backslashxx* ]] || [[ "${{ env.KERNELSU_AUTO_FORK }}" == "xxksu" ]]; then
-              wget https://raw.githubusercontent.com/midori01/gki_ksu_workflow/refs/heads/main/.github/scripts/susfs_deinlined.sh
-              chmod +x susfs_deinlined.sh
-              ./susfs_deinlined.sh susfs_patch_to_${{ env.KERNEL_VERSION }}.patch deinlined.patch
-              patch -p1 < deinlined.patch || true
+              if [[ "${{ env.KERNEL_VERSION }}" == "5.4" ]]; then
+                cp /tmp/Patches/Patch/midori_susfs_fix.patch ./
+                git clone https://github.com/midori01/susfs4ksu -b qgki-android11-5.4
+                cp susfs4ksu/kernel_patches/include/linux/* include/linux
+                cp susfs4ksu/kernel_patches/fs/susfs.c fs/
+                patch -p1 < susfs4ksu/kernel_patches/50_add_susfs_in_qgki-android11-5.4.patch || true
+                patch -p1 < midori_susfs_fix.patch || true
+              else
+                wget https://raw.githubusercontent.com/midori01/gki_ksu_workflow/refs/heads/main/.github/scripts/susfs_deinlined.sh
+                chmod +x susfs_deinlined.sh
+                ./susfs_deinlined.sh susfs_patch_to_${{ env.KERNEL_VERSION }}.patch deinlined.patch
+                patch -p1 < deinlined.patch || true
+              fi
             else
               patch -p1 < susfs_patch_to_${{ env.KERNEL_VERSION }}.patch || true
             fi
