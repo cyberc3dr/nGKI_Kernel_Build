@@ -67,6 +67,7 @@ env:
   DROIDSPACES_ENABLE: "false" # if u need Droidspaces or LXC/Docker.
   NOMOUNT_ENABLE: "true" # if u need NoMount.
   VPNHIDE_ENABLE: "true"
+  FGETPRIORITY_ENABLE: "true"
 
   HOOK_METHOD: "branchlink" # Manual hook method ->  syscall.
 
@@ -140,6 +141,9 @@ jobs:
 
       - name: 🛡️ Patch Kernel of NoMount
         uses: ./.github/workflows/patch-nomount
+
+      - name: 🔒 Patch Kernel of fgetpriority
+        uses: ./.github/workflows/patch-fgetpriority
 
       - name: 🚀 Build Process
         uses: ./.github/workflows/build-process

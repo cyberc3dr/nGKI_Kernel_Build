@@ -1,0 +1,22 @@
+name: 'Patch fgetpriority for Kernel.'
+
+runs:
+  using: 'composite'
+  steps:
+      - name: Patch fgetpriority
+        if: env.FGETPRIORITY_ENABLE == 'true'
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel/
+          
+          git clone https://github.com/aerath-stuff/fgetpriority.git /tmp/fgetpriority
+        
+          mkdir -p drivers/fgetpriority
+          cp -rf /tmp/fgetpriority/kernel/* drivers/fgetpriority/
+          
+          grep -q "fgetpriority" "drivers/Makefile" || printf "\nobj-\$(CONFIG_FGETPRIORITY) += fgetpriority/\n" >> "drivers/Makefile" && echo "[+] Modified Makefile."
+          grep -q "source \"drivers/fgetpriority/Kconfig\"" "drivers/Kconfig" || sed -i "/endmenu/i\\source \"drivers/fgetpriority/Kconfig\"" "drivers/Kconfig" && echo "[+] Modified Kconfig."
+
+          echo "CONFIG_FGETPRIORITY=y" >> ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+
+
