@@ -54,6 +54,7 @@ jobs:
         | Nothing Phone (1) | spacewar | 5.4 | Nothing OS 3.2 | 15 | Anykernel3 | xxKSU | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
         | Nothing Phone (1) | spacewar | 5.4 | Nothing OS 5.0 | 17 | Anykernel3 | xxKSU | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
         | Nothing Phone (1) | spacewar | 5.4 | PixelOS | 17 | Anykernel3 | xxKSU | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
+        | Xiaomi Redmi Note 11 Pro 5G | veux | 5.4 | AOSP | 16 | Anykernel3 | xxKSU | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
 
         - Specific device information: [Supported List](Supported_list.md).
         - The KernelSU version is for reference only. It is normal for the KernelSU version embedded in SUSFS to be lower.

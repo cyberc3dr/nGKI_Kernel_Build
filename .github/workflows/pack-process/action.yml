@@ -66,6 +66,12 @@ runs:
             echo "Found DTB!"
             cp -fp $IMAGE_DIR/dtb tmp
 
+          # Some kernels (e.g. veux) only emit the vendor DTB at
+          # out/arch/arm64/boot/dts/vendor/<chip>/<codename>.dtb.
+          elif [ -f "$IMAGE_DIR/dts/vendor/xiaomi/${{ env.DEVICE_CODENAME }}.dtb" ]; then
+            echo "Found vendor DTB!"
+            cp -fp "$IMAGE_DIR/dts/vendor/xiaomi/${{ env.DEVICE_CODENAME }}.dtb" tmp/dtb
+
           elif [ "${{ env.GENERATE_DTB }}" == "true" ]; then
             if ls $IMAGE_DIR/dts/${{ env.GENERATE_CHIP }}/*.dtb 1> /dev/null 2>&1; then
                 DTB_PATH="dts"
@@ -89,6 +95,21 @@ runs:
 
           fi
 
+          # Device-specific AnyKernel3 extras.
+          # The custom AnyKernel3 branch does not ship cmdline/banner, so the
+          # flasher's check_cmdline() has nothing to replace and keeps the ROM
+          # cmdline. Copy them from the workflow repo for exact parity with the
+          # reference nebula-ksu-susfs zip.
+          DEVICE_AK3_EXTRA="$GITHUB_WORKSPACE/.github/device/${{ env.DEVICE_CODENAME }}"
+          if [ -d "$DEVICE_AK3_EXTRA" ]; then
+            for EXTRA_FILE in cmdline banner; do
+              if [ -f "$DEVICE_AK3_EXTRA/$EXTRA_FILE" ]; then
+                cp -fp "$DEVICE_AK3_EXTRA/$EXTRA_FILE" "tmp/$EXTRA_FILE"
+                echo "[+] Added $EXTRA_FILE from $DEVICE_AK3_EXTRA."
+              fi
+            done
+          fi
+
           # Added kernel modules to AnyKernel3
           if [ "${{ env.PACK_KMODULES }}" == "true" ]; then
             echo "[+] Packing kernel modules (.ko)..."
@@ -104,6 +125,12 @@ runs:
 
             fi
 
+          fi
+
+          # Cosmetic parity with the nebula reference zip. Revert this line if
+          # you want the flasher to identify the upstream "e+ kernel" instead.
+          if [[ "${{ env.DEVICE_CODENAME }}" == "veux" ]]; then
+            sed -i 's/^kernel.string=.*/kernel.string=nebula kernel by frost/' AnyKernel3/anykernel.sh
           fi
 
           cp -rp ./AnyKernel3/* tmp

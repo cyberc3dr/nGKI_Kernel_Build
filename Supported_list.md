@@ -7,3 +7,4 @@
 | Nothing Phone (1) | All | spacewar | [5.4/cyberc3dr/sm7325](https://github.com/cyberc3dr/android_kernel_msm-5.4_nothing_sm7325) | Nothing OS 3.2 | 15 | AnyKernel3 | xxKSU | ✅ | Branch link | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | Stable |  
 | Nothing Phone (1) | All | spacewar | [5.4/cyberc3dr/sm7325](https://github.com/cyberc3dr/android_kernel_msm-5.4_nothing_sm7325) | Nothing OS 5.0 | 17 | AnyKernel3 | xxKSU | ✅ | Branch link | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | Stable |  
 | Nothing Phone (1) | All | spacewar | [5.4/xAbdaziz/sm7325](https://github.com/xAbdaziz/kernel_nothing_sm7325) | PixelOS | 17 | AnyKernel3 | xxKSU | ✅ | Branch link | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | Stable |  
+| Xiaomi Redmi Note 11 Pro 5G | All | veux | [5.4/frost-testzone/kernel_xiaomi_sm6375](https://github.com/frost-testzone/kernel_xiaomi_sm6375) | AOSP | 16 | AnyKernel3 | xxKSU | ✅ | Branch link | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | Stable |  
