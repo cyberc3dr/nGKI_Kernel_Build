@@ -1,0 +1,187 @@
+name: Build Xiaomi Redmi Note 11 Pro 5G (AOSP Based A16)
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  # Device env
+  DEVICE_NAME : "redmi_note_11_pro_5g"
+  DEVICE_CODENAME : "veux"
+
+  CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu-"
+  # CROSS_COMPILE from the Android GCC toolchain makes this 5.4 kbuild pass
+  # --target=aarch64-linux-android to clang. On that target clang ignores
+  # -mstack-protector-guard=sysreg and emits global __stack_chk_guard refs,
+  # but CONFIG_STACKPROTECTOR_PER_TASK=y omits the global definition ->
+  # vmlinux link fails. Override the target to aarch64-linux-gnu (the same
+  # target used by the working local build) via KCFLAGS, which is appended
+  # after CLANG_FLAGS in KBUILD_CFLAGS.
+  EXTRA_CMDS : "LD=ld.lld KCFLAGS=--target=aarch64-linux-gnu"
+
+  KERNEL_SOURCE : "https://github.com/frost-testzone/kernel_xiaomi_sm6375.git"
+  KERNEL_BRANCH : "main"
+
+  CLANG_SOURCE : "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r614150.tar.gz"
+  CLANG_BRANCH : ""
+
+  GCC_GNU : false
+  GCC_64_SOURCE : "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9.git"
+  GCC_64_BRANCH : "android12L-release"
+  GCC_32_SOURCE : "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9.git"
+  GCC_32_BRANCH : "android12L-release"
+
+  DEFCONFIG_SOURCE: ""
+  DEFCONFIG_NAME : "veux_defconfig"
+  DEFCONFIG_ORIGIN_IMAGE: ""
+  DEFCONFIG_FROM_BOOT: false
+
+  KERNELSU_SOURCE : ""
+  KERNELSU_BRANCH : ""
+
+  KERNELSU_AUTO_GET : "true" # if u want easy setting kernelsu, u can true.
+  KERNELSU_AUTO_FORK : "xxksu" # xxksu, rsuntk, next, bakasu and sukisu
+
+  SUSFS_ENABLE : true
+  SUSFS_FIXED : true
+
+  AK3_SOURCE : "https://github.com/dereference23/AnyKernel3.git"
+  AK3_BRANCH : "veux"
+
+  BOOT_SOURCE : ""
+
+  NEED_DTBO : false
+  NEED_SAFE_DTBO : false
+
+  ROM_TEXT : "aosp_a16"
+
+  # Other env
+  PYTHON_VERSION: "3" # Only 2(Ubuntu 22.04 and Ubuntu 20.04) or 3(Any OS Versions).
+
+  PACK_METHOD: "AnyKernel3" # AnyKernel3 need SOURCE and BRANCH, MKBOOTIMG needn't it.
+  PACK_KMODULES: "false" # if u want pack kernel modules (.ko) into AnyKernel3.
+
+  KERNELSU_METHOD: "shell" # shell, manual and only.
+
+  PATCHES_SOURCE: "JackA1ltman/NonGKI_Kernel_Patches" # [your_name]/[your_patch] -> gooder123/NonGKI_Patcher
+  PATCHES_BRANCH: "mi_kernel" # [your_branch] -> main
+
+  SUSFS_FOLDER_FIXED: "" # Leave blank - the midori SUSFS pipeline applies patches directly (patch-susfs/action.yml).
+  SUSFS_PATCH_FIXED: "midori_susfs_fix" # midori SUSFS fix patch (applied automatically by patch-susfs/action.yml).
+
+  REKERNEL_ENABLE: "false" # if u need Re:Kernel.
+  DROIDSPACES_ENABLE: "false" # if u need Droidspaces or LXC/Docker.
+  NOMOUNT_ENABLE: "true" # if u need NoMount.
+
+  HOOK_METHOD: "inline" # de-inline SUSFS via CONFIG_KSU_HACK_ARM64_BRANCH_LINK (branch-link hijack), not syscall table.
+
+  KPM_ENABLE: "false" # Anyone devices.
+  KPM_INLINE: "false" # Only use it for SukiSU-Ultra.
+  KPM_KPATCH_NEXT: "false" # If u want hook KPatch-Next in build step.
+  KPM_PATCH_SOURCE: "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU_patch/refs/heads/main/kpm/patch_linux" # If u want to use KPM Inline,so you need set patch exec file source -> raw.githubusercontent.com/Test/Test/patch .
+
+  BASEBAND_GUARD_ENABLE: "false" #if u want prevent unauthorized writes to critical partitions/device nodes.
+  BASEBAND_GUARD_BOOT: "false" #if u want to protect boot partition.
+
+  GENERATE_DTB: "false" # if u kernel need DTB , but cannot auto generate it. (Only AnyKernel3).
+  GENERATE_CHIP: "qcom" # only supported for qcom and mediatek.
+
+  BUILD_DEBUGGER: "false" # Output build errors.
+  SKIP_PATCH: "false" # Ignore errors found in Patch Debugger.
+
+  BUILD_OTHER_CONFIG: "false" # Merge config files.
+  MERGE_CONFIG_FILES: "vendor/debugfs.config,vendor/lahaina_QGKI.config"
+
+  FREE_MORE_SPACE: "false" # if u want get more space, enabled it.
+
+jobs:
+  build-kernel:
+    name: Xiaomi Redmi Note 11 Pro 5G (AOSP Based A16)
+    runs-on: ubuntu-24.04 # u can changed to ubuntu 22.04, and need container set ubuntu-24.04
+    # container: archlinux/archlinux:latest # if u need use arch linux -> archlinux/archlinux:latest or ubuntu 20.04 -> ubuntu:focal
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
+
+    steps:
+      - name: ⏰ Checkout repository
+        uses: actions/checkout@v6
+
+      - name: ⌛️ Compilation environment preparation
+        uses: ./.github/workflows/build-env
+
+      - name: ⚙️ Get necessary tools
+        uses: ./.github/workflows/build-ready
+
+      - name: 🪝 Patch Kernel of SUSFS (veux / SM6375)
+        # Device-specific SUSFS pipeline. Shared patch-susfs stays untouched,
+        # so other upstream devices are unaffected.
+        # midori 5.4 SUSFS sources + midori_susfs_fix.patch +
+        # JackA1ltman susfs_fixed_eplus.patch, strict failure checks.
+        uses: ./.github/workflows/patch-susfs-veux
+
+      - name: 🔗 Patch for no-kprobe
+        uses: ./.github/workflows/patch-no-kprobe
+
+      - name: 🪛 Extra Kernel Options
+        run: |
+          # Only ${{ env.DEVICE_NAME }} use it.
+          cd $GITHUB_WORKSPACE/device_kernel
+
+          # enable CONFIG_TMPFS_XATTR
+
+          echo "CONFIG_TMPFS_XATTR=y" >> ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+
+          # vmlinux link fix (clang-r614150 / full LTO):
+          #   ld.lld: error: undefined symbol: __stack_chk_guard
+          # Full LTO drops the arm64 per-task stack-protector guard settings,
+          # while ThinLTO keeps them (and is the known-good local build path).
+          sed -i '/^# CONFIG_THINLTO is not set$/d' ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+          echo "CONFIG_THINLTO=y" >> ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+
+      - name: 📚 Install UAPI Headers (BakaSU preinit)
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel
+
+          # BakaSU's preinit_runner.mk needs $(objtree)/usr/include/linux/unistd.h.
+          # Installing it up-front avoids its nested `make -C $(srctree) O=$(objtree)`
+          # call, which resolves srctree to `..` and fails on `find ../techpack`.
+          #
+          # IMPORTANT: always pass O=out here. Without it objtree == srctree and
+          # the "headers" target creates arch/arm64/include/generated in the
+          # source tree, which later makes the O=out build abort with
+          # "*** The source tree is not clean, please run 'make ARCH=arm64 mrproper'".
+          if [[ -f out/usr/include/linux/unistd.h ]]; then
+            echo "[+] UAPI headers already installed, Skipped."
+          else
+            make -s O=out ARCH=${{ env.KERNEL_ARCH }} headers_install INSTALL_HDR_PATH="$PWD/out/usr"
+            test -f out/usr/include/linux/unistd.h
+            echo "[+] UAPI headers installed to out/usr/include."
+          fi
+
+      - name: 🧰 Patch Kernel of Re:Kernel
+        uses: ./.github/workflows/patch-rekernel
+
+      - name: 💿 Patch Kernel of Droidspaces
+        uses: ./.github/workflows/patch-droidspaces
+
+      - name: 🔒 Patch Kernel of Baseband Guard
+        uses: ./.github/workflows/patch-baseband-guard
+
+      - name: 🛡️ Patch Kernel of NoMount
+        uses: ./.github/workflows/patch-nomount
+
+      - name: ❌ Set Swap
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 16
+
+      - name: 🚀 Build Process
+        uses: ./.github/workflows/build-process
+
+      - name: 🔩 Pack Process
+        uses: ./.github/workflows/pack-process
+
+      - name: ✏️ Upload Artifacts
+        uses: ./.github/workflows/upload-files

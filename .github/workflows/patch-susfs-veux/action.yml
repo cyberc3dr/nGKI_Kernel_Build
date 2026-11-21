@@ -1,0 +1,86 @@
+name: 'Patch SUSFS for Kernel.'
+
+runs:
+  using: 'composite'
+  steps:
+      - name: Get SUSFS
+        if: env.SUSFS_ENABLE == 'true'
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel/
+
+          # midori SUSFS source: files + patches
+          git clone https://github.com/midori01/susfs4ksu.git -b qgki-android11-5.4 --depth=1
+
+          echo "[+] midori SUSFS source cloned."
+
+      - name: Set KSU and SUSFS for DEFCONFIG
+        if: env.SUSFS_ENABLE == 'true'
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel
+
+          echo "CONFIG_KSU_SUSFS=y" >> ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+          echo "CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y" >> ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+
+          if grep -q "THREAD_INFO_IN_TASK" "drivers/kernelsu/Kconfig"; then
+            echo "CONFIG_THREAD_INFO_IN_TASK=y" >> ./arch/${{ env.KERNEL_ARCH }}/configs/${{ env.DEFCONFIG_NAME }}
+          fi
+
+      - name: Patch SUSFS
+        if: env.SUSFS_ENABLE == 'true'
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel/
+
+          # Copy SUSFS source files from midori01/susfs4ksu
+          cp -f susfs4ksu/kernel_patches/include/linux/susfs.h include/linux/susfs.h
+          cp -f susfs4ksu/kernel_patches/include/linux/susfs_def.h include/linux/susfs_def.h
+          cp -f susfs4ksu/kernel_patches/fs/susfs.c fs/susfs.c
+          echo "[+] SUSFS source files copied."
+
+          # Apply the midori SUSFS add patch (qgki-android11-5.4)
+          patch -p1 < susfs4ksu/kernel_patches/50_add_susfs_in_qgki-android11-5.4.patch || true
+          echo "[+] Applied 50_add_susfs_in_qgki-android11-5.4.patch."
+
+          # Apply the midori SUSFS fix patch (cyberc3dr/nGKI_Kernel_Build)
+          curl -sL https://raw.githubusercontent.com/cyberc3dr/nGKI_Kernel_Build/rebase/Patches/Patch/midori_susfs_fix.patch -o midori_susfs_fix.patch
+          if ! patch -p1 --forward < midori_susfs_fix.patch; then
+            echo "::error::midori_susfs_fix.patch failed to apply"
+            exit 1
+          fi
+          echo "[+] Applied midori_susfs_fix.patch."
+
+          # Device-specific SUSFS fixes for SM6375/veux.
+          # The generic midori patch cannot add the missing
+          # `#include <linux/susfs_def.h>` hunk in fs/proc/task_mmu.c on this
+          # kernel, which makes the build fail with:
+          #   error: implicit declaration of function 'SUSFS_IS_INODE_SUS_MAP'
+          #   error: implicit declaration of function 'SUSFS_IS_INODE_OPEN_REDIRECT'
+          # It also fixes the fs/proc/fd.c spoof block and kernel/sys.c uname
+          # spoof hunks that were rejected above.
+          # Source: JackA1ltman/NonGKI_Kernel_Patches@mi_kernel
+          #         redmi_note11pro_5g_aosp_a16/susfs_fixed_eplus.patch
+          if [[ "${{ env.DEVICE_CODENAME }}" == "veux" ]]; then
+            curl -sL "https://raw.githubusercontent.com/JackA1ltman/NonGKI_Kernel_Patches/mi_kernel/redmi_note11pro_5g_aosp_a16/susfs_fixed_eplus.patch" -o susfs_fixed_eplus.patch
+            if ! patch -p1 --forward < susfs_fixed_eplus.patch; then
+              echo "::error::susfs_fixed_eplus.patch failed to apply"
+              exit 1
+            fi
+            echo "[+] Applied susfs_fixed_eplus.patch (SM6375/veux)."
+          fi
+
+          echo "[+] SUSFS Patch completed."
+
+      # NOTE: the old "SUSFS Patch Fixed" step is intentionally removed.
+      # It depended on the JackA1ltman/NonGKI_Kernel_Patches clone and the
+      # SUSFS_PATCH_FIXED/SUSFS_FOLDER_FIXED env vars, which are no longer
+      # part of this pipeline (we apply midori SUSFS patches directly above).
+
+      - name: Upload Build Patch Rejected Files
+        if: env.BUILD_DEBUGGER == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: patch_rejected_files
+          path: |
+            device_kernel/rej_files_*
