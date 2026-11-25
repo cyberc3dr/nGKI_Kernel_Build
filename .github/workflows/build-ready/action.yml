@@ -117,14 +117,13 @@ runs:
           # Function
           KERNELSU_AUTO(){
             if [[ "${{ env.KERNELSU_AUTO_FORK }}" == "xxksu" ]]; then
-                KERNELSU_AUTHOR="backslashxx"
+                KERNELSU_AUTHOR="midori01"
                 KERNELSU_NAME="KernelSU"
-                KERNELSU_ORIGIN_BRANCH="master"
+                KERNELSU_ORIGIN_BRANCH="main"
                 if [[ "${{ env.SUSFS_ENABLE }}" == "true" ]]; then
-                    echo "[-] ${{ env.KERNELSU_AUTO_FORK }} doesn't support SUSFS! "
-                    false
+                    KERNELSU_BRANCH="xx"
                 else
-                    KERNELSU_BRANCH="master"
+                    KERNELSU_BRANCH="xx^1"
                 fi
 
             elif [[ "${{ env.KERNELSU_AUTO_FORK }}" == "rsuntk" ]]; then
